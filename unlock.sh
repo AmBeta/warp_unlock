@@ -35,7 +35,7 @@ function Change_IP() {
 
 # 检查 Netflix 联通性
 function UnlockTest_Netflix() {
-  echo "\r Checking:\tNetflix"
+  echo -n -e "\r Checking:\tNetflix"
 
   local result1=$(curl --user-agent "${UA_Browser}" -fsL --write-out %{http_code} --output /dev/null --max-time 10 "${Netflix_Check_URL1}" 2>&1)
   local result2=$(curl --user-agent "${UA_Browser}" -fsL --write-out %{http_code} --output /dev/null --max-time 10 "${Netflix_Check_URL2}" 2>&1)
@@ -61,9 +61,9 @@ function UnlockTest_Netflix() {
 
 attempt=1
 while [[ $attempt -le $MAX_ATTEMPTS ]]; do
-  echo "\r${Font_Blue}Trying $attempt...${Font_Suffix}"
+  echo -n -e "\r${Font_Blue}Trying $attempt...${Font_Suffix}\n"
   if UnlockTest_Netflix; then
-    echo -n -e "\r${Font_Green}Success!${Font_Suffix}"
+    echo -n -e "\r${Font_Green}Success!${Font_Suffix}\n"
     break
   else
     Change_IP
@@ -72,6 +72,6 @@ while [[ $attempt -le $MAX_ATTEMPTS ]]; do
 done
 
 if [[ $attempt -gt $MAX_ATTEMPTS ]]; then
-  echo -n -e "\r${Font_Red}Failed!${Font_Suffix}"
+  echo -n -e "\r${Font_Red}Failed!${Font_Suffix}\n"
   #TODO: 发送到 telegram
 fi
