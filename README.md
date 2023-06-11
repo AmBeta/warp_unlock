@@ -9,7 +9,7 @@ You can also add it to `crontab` for periodically checking.
 
 ## Roadmap
 
-[] Add telegram notification when failed.
+[ ] Add telegram notification when failed.
 
 ## Reference
 
