@@ -19,7 +19,7 @@ MAX_ATTEMPTS=10
 # 更换 Warp IP
 function Change_IP() {
   echo -n -e "\r ${Font_Blue}Changing IP...${Font_Suffix}"
-  # systemctl restart wg-quick@wgcf
+  systemctl restart wg-quick@wgcf
   
   local result = $(curl -fs --max-time 5 "ip.p3terx.com")
   local ip_address = $(echo "$result" | head -n 1)
