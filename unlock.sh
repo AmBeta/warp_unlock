@@ -21,13 +21,13 @@ function Change_IP() {
   echo -n -e "\r ${Font_Blue}Changing IP...${Font_Suffix}"
   systemctl restart wg-quick@wgcf
   
-  local result=$(curl -fs --max-time 5 "ip.p3terx.com")
+  local result=$(timeout 5s curl -fs "ip.p3terx.com")
   local ip_address=$(echo "$result" | head -n 1)
 
   if [[ -n $ip_address ]]; then
-    echo -n -e "\r ${Font_Green}Get new ip address: $ip_address ${Font_Suffix}"
+    echo -n -e "\r ${Font_Green}Get new ip address: $ip_address ${Font_Suffix}\n"
   else
-    echo -n -e "\r ${Font_Red}Failed to get new ip address, sleep 3 seconds then retry.${Font_Suffix}"
+    echo -n -e "\r ${Font_Red}Failed to get new ip address, sleep 3 seconds then retry.${Font_Suffix}\n"
     sleep 3
     Change_IP
   fi
