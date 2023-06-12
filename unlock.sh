@@ -43,8 +43,8 @@ function Log() {
     touch "$LOG_FILE"
   fi
 
-  echo "[$timestamp] ${font_color}$message${Font_Suffix}"
-  echo "[$timestamp] $message" >>"$LOG_FILE"
+  printf "[$timestamp] ${font_color}$message${Font_Suffix}\n"
+  printf "[$timestamp] $message\n" >>"$LOG_FILE"
 }
 
 # Refresh Warp IP
