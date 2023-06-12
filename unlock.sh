@@ -15,55 +15,67 @@ Netflix_Check_URL2="https://www.netflix.com/title/70143836"
 Netflix_Region_URL="https://www.netflix.com/title/80018499"
 
 MAX_ATTEMPTS=10
+LOG_FILE="./log.txt"
 
-# 更换 Warp IP
+function Log() {
+  local message=$1
+  local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+
+  if [ ! -f "$LOG_FILE" ]; then
+    touch "$LOG_FILE"
+  fi
+
+  echo "[$timestamp] $message" | tee -a "$LOG_FILE"
+}
+
+# Refresh Warp IP
 function Change_IP() {
-  echo -n -e "\r ${Font_Blue}Changing IP...${Font_Suffix}"
+  Log "Changing IP..."
   systemctl restart wg-quick@wgcf
-  
+
   local result=$(timeout 5s curl -fs "ip.p3terx.com")
   local ip_address=$(echo "$result" | head -n 1)
 
   if [[ -n $ip_address ]]; then
-    echo -n -e "\r ${Font_Green}Get new ip address: $ip_address ${Font_Suffix}\n"
+    Log "Get new ip address: $ip_address"
   else
-    echo -n -e "\r ${Font_Red}Failed to get new ip address, sleep 3 seconds then retry.${Font_Suffix}\n"
+    Log "Failed to get new ip address, sleep 3 seconds then retry."
     sleep 3
     Change_IP
   fi
 }
 
-# 检查 Netflix 联通性
+# Check unlock for Netflix
 function UnlockTest_Netflix() {
-  echo -n -e "\r Checking:\tNetflix"
+  Log "Checking:\tNetflix"
 
   local result1=$(curl --user-agent "${UA_Browser}" -fsL --write-out %{http_code} --output /dev/null --max-time 10 "${Netflix_Check_URL1}" 2>&1)
   local result2=$(curl --user-agent "${UA_Browser}" -fsL --write-out %{http_code} --output /dev/null --max-time 10 "${Netflix_Check_URL2}" 2>&1)
 
   if [[ "$result1" == "404" ]] && [[ "$result2" == "404" ]]; then
-    echo -n -e "\r Netflix:\t${Font_Yellow}Originals Only${Font_Suffix}\n"
+    Log "Netflix:\tOriginals Only"
     return 1
   elif [[ "$result1" == "403" ]] && [[ "$result2" == "403" ]]; then
-    echo -n -e "\r Netflix:\t${Font_Red}No${Font_Suffix}\n"
+    Log "Netflix:\tNo"
     return 1
   elif [[ "$result1" == "200" ]] || [[ "$result2" == "200" ]]; then
     local region=$(curl --user-agent "${UA_Browser}" -fs --max-time 10 --write-out %{redirect_url} --output /dev/null "${Netflix_Region_URL}" 2>&1 | cut -d '/' -f4 | cut -d '-' -f1 | tr [:lower:] [:upper:])
     if [[ ! -n "$region" ]]; then
       region="US"
     fi
-    echo -n -e "\r Netflix:\t${Font_Green}Yes (Region: ${region})${Font_Suffix}\n"
+    Log "Netflix:\tYes (Region: ${region})"
     return 0
   elif [[ "$result1" == "000" ]]; then
-    echo -n -e "\r Netflix:\t${Font_Red}Failed (Network Connection)${Font_Suffix}\n"
+    Log "Netflix:\tFailed (Network Connection)"
     return 1
   fi
 }
 
 attempt=1
 while [[ $attempt -le $MAX_ATTEMPTS ]]; do
-  echo -n -e "\r${Font_Blue}Trying $attempt...${Font_Suffix}\n"
+  Log "Trying $attempt..."
   if UnlockTest_Netflix; then
-    echo -n -e "\r${Font_Green}Success!${Font_Suffix}\n"
+    Log "Success!"
     break
   else
     Change_IP
@@ -72,6 +84,6 @@ while [[ $attempt -le $MAX_ATTEMPTS ]]; do
 done
 
 if [[ $attempt -gt $MAX_ATTEMPTS ]]; then
-  echo -n -e "\r${Font_Red}Failed!${Font_Suffix}\n"
-  #TODO: 发送到 telegram
+  Log "\r${Font_Red}Failed!${Font_Suffix}"
+  #TODO: send notification to telegram bot
 fi
