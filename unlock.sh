@@ -12,17 +12,20 @@ Font_Suffix="\033[0m"
 
 UA_Browser="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36"
 
-MAX_ATTEMPTS=10
-LOG_FILE="./log.txt"
+MAX_ATTEMPTS=50
+LOG_FILE="$LOG_FILE"
+TG_TOKEN="$TG_TOKEN"
+TG_USER_ID="$TG_USER_ID"
 
 # Get options
-while getopts ":l:t" opt; do
+while getopts ":l:t:" opt; do
   case $opt in
   l)
     LOG_FILE="$OPTARG"
     ;;
   t)
-    MAX_ATTEMPTS="$OPTARG"
+    TG_TOKEN="$(echo $OPTARG | cut -d'@' -f1)"
+    TG_USER_ID="$(echo $OPTARG | cut -d'@' -f2)"
     ;;
   \?)
     echo "Invalid option: -$OPTARG" >&2
@@ -40,21 +43,39 @@ function Log() {
   local font_color=$2
   local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
 
-  if [ ! -f "$LOG_FILE" ]; then
+  if [[ -n "$LOG_FILE" ]] && [[ ! -f "$LOG_FILE" ]]; then
     touch "$LOG_FILE"
   fi
 
   printf "[$timestamp] ${font_color}$message${Font_Suffix}\n"
-  printf "[$timestamp] $message\n" >>"$LOG_FILE"
+
+  if [[ -n "$LOG_FILE" ]]; then
+    printf "[$timestamp] $message\n" >>"$LOG_FILE"
+  fi
+}
+
+function Notify() {
+  local message=$1
+
+  # send notification to telegram bot
+  if [[ -n "$TG_TOKEN" ]] && [[ -n "TG_USER_ID" ]]; then
+    local text="*[Warp Unlock]*%0ACurrent IP: $ip_address%0A$message"
+    curl -s -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
+      -d "chat_id=$TG_USER_ID" \
+      -d "text=$text" \
+      -d "parse_mode=MarkdownV2" \
+      --output /dev/null 2>&1
+  fi
 }
 
 # Refresh Warp IP
+ip_address=$(curl -fs "ip.p3terx.com" | head -n 1)
 function Change_IP() {
   Log "Changing IP..." $Font_SkyBlue
   systemctl restart wg-quick@wgcf
 
   local result=$(timeout 5s curl -fs "ip.p3terx.com")
-  local ip_address=$(echo "$result" | head -n 1)
+  ip_address=$(echo "$result" | head -n 1)
 
   if [[ -n $ip_address ]]; then
     Log "Get new ip address: $ip_address" $Font_Green
@@ -111,15 +132,17 @@ while [[ $attempt -le $MAX_ATTEMPTS ]]; do
   Log "Trying $attempt..." $Font_Blue
 
   if UnlockTest_Netflix && UnlockTest_OpenAI; then
+    Notify "Check result: ✅"
     Log "Success!" $Font_Green
     break
   else
+    Notify "Check result: ❌ Retrying..."
     Change_IP
     attempt=$((attempt + 1))
   fi
 done
 
 if [[ $attempt -gt $MAX_ATTEMPTS ]]; then
+  Notify "Check result: ❌"
   Log "\r${Font_Red}Failed!${Font_Suffix}" $Font_Red
-  #TODO: send notification to telegram bot
 fi

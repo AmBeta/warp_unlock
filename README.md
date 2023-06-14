@@ -9,9 +9,10 @@ You can also add it to `crontab` for periodically checking.
 
 ## Roadmap
 
-[ ] Add telegram notification when failed.
+- [x] Add telegram notification when failed.
 
-## Reference
+## Thanks
 
 - [fscarmen/warp_unlock](https://github.com/fscarmen/warp_unlock)
 - [lmc999/RegionRestrictionCheck](https://github.com/lmc999/RegionRestrictionCheck)
+- [P3TERX](https://github.com/P3TERX)
