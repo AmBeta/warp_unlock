@@ -58,7 +58,7 @@ function Notify() {
   local message=$1
 
   # send notification to telegram bot
-  if [[ -n "$TG_TOKEN" ]] && [[ -n "TG_USER_ID" ]]; then
+  if [[ -n "$TG_TOKEN" ]] && [[ -n "$TG_USER_ID" ]]; then
     local text="*[Warp Unlock]*%0ACurrent IP: $ip_address%0A$message"
     curl -s -X POST "https://api.telegram.org/bot${TG_TOKEN}/sendMessage" \
       -d "chat_id=$TG_USER_ID" \
@@ -136,7 +136,7 @@ while [[ $attempt -le $MAX_ATTEMPTS ]]; do
     Log "Success!" $Font_Green
     break
   else
-    Notify "Check result: ❌ Retrying..."
+    # Notify "Check result: ❌ Retrying"
     Change_IP
     attempt=$((attempt + 1))
   fi
