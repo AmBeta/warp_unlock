@@ -13,19 +13,26 @@ Font_Suffix="\033[0m"
 UA_Browser="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36"
 
 MAX_ATTEMPTS=50
+NF_REGION="US"
 LOG_FILE="$LOG_FILE"
 TG_TOKEN="$TG_TOKEN"
 TG_USER_ID="$TG_USER_ID"
 
 # Get options
-while getopts ":l:t:" opt; do
+while getopts ":l:t:r:" opt; do
   case $opt in
+  # log file path
   l)
     LOG_FILE="$OPTARG"
     ;;
+  # telegram token and user id: token@userID
   t)
     TG_TOKEN="$(echo $OPTARG | cut -d'@' -f1)"
     TG_USER_ID="$(echo $OPTARG | cut -d'@' -f2)"
+    ;;
+  # expected netflix unlock region
+  r)
+    NF_REGION="$OPTARG"
     ;;
   \?)
     echo "Invalid option: -$OPTARG" >&2
@@ -103,6 +110,10 @@ function UnlockTest_Netflix() {
     local region=$(curl --user-agent "${UA_Browser}" -fs --max-time 10 --write-out %{redirect_url} --output /dev/null "https://www.netflix.com/title/80018499" 2>&1 | cut -d '/' -f4 | cut -d '-' -f1 | tr [:lower:] [:upper:])
     if [[ ! -n "$region" ]]; then
       region="US"
+    fi
+    if [[ ! "$region" == $(echo "$NF_REGION" | tr '[:lower:]' '[:upper:]') ]]; then
+      Log "Netflix:\tRegion Mismatch (Region: ${region}/${NF_REGION})" $Font_Red
+      return 1
     fi
     Log "Netflix:\tYes (Region: ${region})" $Font_Green
     return 0
