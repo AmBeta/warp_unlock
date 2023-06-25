@@ -46,6 +46,13 @@ while getopts ":l:t:r:" opt; do
   esac
 done
 
+# check dependencies
+if ! command -v python &>/dev/null; then
+  if command -v python3 &>/dev/null; then
+    alias python="python3"
+  fi
+fi
+
 function Log() {
   local message=$1
   local font_color=$2
