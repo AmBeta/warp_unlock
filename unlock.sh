@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 Font_Black="\033[30m"
 Font_Red="\033[31m"
@@ -11,6 +11,7 @@ Font_White="\033[37m"
 Font_Suffix="\033[0m"
 
 UA_Browser="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36"
+Media_Cookie=$(curl -s --retry 3 --max-time 10 "https://raw.githubusercontent.com/lmc999/RegionRestrictionCheck/main/cookies")
 
 MAX_ATTEMPTS=50
 NF_REGION="US"
@@ -123,6 +124,61 @@ function UnlockTest_Netflix() {
   fi
 }
 
+# Check unlock for Disney+
+function UnlockTest_DisneyPlus() {
+  Log "Checking:\tDisney+" $Font_SkyBlue
+
+  local PreAssertion=$(curl --user-agent "${UA_Browser}" -s --max-time 10 -X POST "https://disney.api.edge.bamgrid.com/devices" -H "authorization: Bearer ZGlzbmV5JmJyb3dzZXImMS4wLjA.Cu56AgSfBTDag5NiRA81oLHkDZfu5L3CKadnefEAY84" -H "content-type: application/json; charset=UTF-8" -d '{"deviceFamily":"browser","applicationRuntime":"chrome","deviceProfile":"windows","attributes":{}}' 2>&1)
+  if [[ "$PreAssertion" == "curl"* ]] && [[ "$1" == "6" ]]; then
+    Log "Disney+:\tIPv6 Not Support" $Font_Red
+    return 1
+  elif [[ "$PreAssertion" == "curl"* ]]; then
+    Log "Disney+:\tFailed (Network Connection)" $Font_Red
+    return 1
+  fi
+
+  local assertion=$(echo $PreAssertion | python -m json.tool 2>/dev/null | grep assertion | cut -f4 -d'"')
+  local PreDisneyCookie=$(echo "$Media_Cookie" | sed -n '1p')
+  local disneycookie=$(echo $PreDisneyCookie | sed "s/DISNEYASSERTION/${assertion}/g")
+  local TokenContent=$(curl --user-agent "${UA_Browser}" -s --max-time 10 -X POST "https://disney.api.edge.bamgrid.com/token" -H "authorization: Bearer ZGlzbmV5JmJyb3dzZXImMS4wLjA.Cu56AgSfBTDag5NiRA81oLHkDZfu5L3CKadnefEAY84" -d "$disneycookie" 2>&1)
+  local isBanned=$(echo $TokenContent | python -m json.tool 2>/dev/null | grep 'forbidden-location')
+  local is403=$(echo $TokenContent | grep '403 ERROR')
+
+  if [ -n "$isBanned" ] || [ -n "$is403" ]; then
+    Log "Disney+:\tBanned" $Font_Red
+    return 1
+  fi
+
+  local fakecontent=$(echo "$Media_Cookie" | sed -n '8p')
+  local refreshToken=$(echo $TokenContent | python -m json.tool 2>/dev/null | grep 'refresh_token' | awk '{print $2}' | cut -f2 -d'"')
+  local disneycontent=$(echo $fakecontent | sed "s/ILOVEDISNEY/${refreshToken}/g")
+  local tmpresult=$(curl --user-agent "${UA_Browser}" -X POST -sSL --max-time 10 "https://disney.api.edge.bamgrid.com/graph/v1/device/graphql" -H "authorization: ZGlzbmV5JmJyb3dzZXImMS4wLjA.Cu56AgSfBTDag5NiRA81oLHkDZfu5L3CKadnefEAY84" -d "$disneycontent" 2>&1)
+  local previewcheck=$(curl -s -o /dev/null -L --max-time 10 -w '%{url_effective}\n' "https://disneyplus.com" | grep preview)
+  local isUnabailable=$(echo $previewcheck | grep 'unavailable')
+  local region=$(echo $tmpresult | python -m json.tool 2>/dev/null | grep 'countryCode' | cut -f4 -d'"')
+  local inSupportedLocation=$(echo $tmpresult | python -m json.tool 2>/dev/null | grep 'inSupportedLocation' | awk '{print $2}' | cut -f1 -d',')
+
+  if [[ "$region" == "JP" ]]; then
+    Log "Disney+:\tYes (Region: JP)" $Font_Green
+    return
+  elif [ -n "$region" ] && [[ "$inSupportedLocation" == "false" ]] && [ -z "$isUnabailable" ]; then
+    Log "Disney+:\tAvailable For [Disney+ $region] Soon" $Font_Yellow
+    return 1
+  elif [ -n "$region" ] && [ -n "$isUnavailable" ]; then
+    Log "Disney+:\tNo" $Font_Red
+    return 1
+  elif [ -n "$region" ] && [[ "$inSupportedLocation" == "true" ]]; then
+    Log "Disney+:\tYes (Region: $region)" $Font_Green
+    return
+  elif [ -z "$region" ]; then
+    Log "Disney+:\tNo" $Font_Red
+    return 1
+  else
+    Log "Disney+:\tFailed" $Font_Red
+    return 1
+  fi
+}
+
 # Check unlock for OpenAI
 function UnlockTest_OpenAI() {
   Log "Checking:\tOpenAI" $Font_SkyBlue
@@ -134,7 +190,7 @@ function UnlockTest_OpenAI() {
     return
   else
     Log "OpenAI:\tNo" $Font_Red
-    return
+    return 1
   fi
 }
 
@@ -142,7 +198,7 @@ attempt=1
 while [[ $attempt -le $MAX_ATTEMPTS ]]; do
   Log "Trying $attempt..." $Font_Blue
 
-  if UnlockTest_Netflix && UnlockTest_OpenAI; then
+  if UnlockTest_Netflix && UnlockTest_DisneyPlus && UnlockTest_OpenAI; then
     Notify "Check result: ✅"
     Log "Success!" $Font_Green
     break
@@ -155,5 +211,5 @@ done
 
 if [[ $attempt -gt $MAX_ATTEMPTS ]]; then
   Notify "Check result: ❌"
-  Log "\r${Font_Red}Failed!${Font_Suffix}" $Font_Red
+  Log "Failed!" $Font_Red
 fi
