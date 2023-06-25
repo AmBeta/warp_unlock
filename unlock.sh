@@ -46,12 +46,15 @@ while getopts ":l:t:r:" opt; do
   esac
 done
 
-# check dependencies
-if ! command -v python &>/dev/null; then
-  if command -v python3 &>/dev/null; then
-    alias python="python3"
+# Check dependencies
+function CheckDependencies() {
+  if ! command -v python &>/dev/null; then
+    if command -v python3 &>/dev/null; then
+      alias python="python3"
+    fi
   fi
-fi
+}
+CheckDependencies
 
 function Log() {
   local message=$1
