@@ -87,7 +87,7 @@ function Notify() {
 }
 
 # Refresh Warp IP
-ip_address=$(curl -fs "ip.p3terx.com" | head -n 1)
+ip_address=$(timeout 5s curl -fs "ip.p3terx.com" | head -n 1)
 function Change_IP() {
   Log "Changing IP..." $Font_SkyBlue
   systemctl restart wg-quick@wgcf
