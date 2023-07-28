@@ -194,8 +194,8 @@ function UnlockTest_OpenAI() {
   Log "Checking:\tOpenAI" $Font_SkyBlue
 
   local result1=$(curl -sL --max-time 10 "https://chat.openai.com" | grep 'Sorry, you have been blocked')
-  local result2=$(curl -sI --max-time 10 "https://chat.openai.com" | grep 'cf-mitigated: challenge')
-  if [ -z "$result1" ] && [ -n "$result2" ]; then
+  #local result2=$(curl -sI --max-time 10 "https://chat.openai.com" | grep 'cf-mitigated: challenge')
+  if [ -z "$result1" ]; then
     Log "OpenAI:\tYes" $Font_Green
     return
   else
