@@ -69,6 +69,8 @@ function Log() {
 
   if [[ -n "$LOG_FILE" ]]; then
     printf "[$timestamp] $message\n" >>"$LOG_FILE"
+  elif command -v logger &>/dev/null; then
+    printf "$message" | logger -i -t warp_unlock
   fi
 }
 
