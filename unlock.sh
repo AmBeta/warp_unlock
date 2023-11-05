@@ -111,6 +111,7 @@ function Change_IP() {
     if [[ $ipchange_attempts -ge $MAX_IP_CHANGE_ATTEMPTS ]]; then
       Log "Chaning IP attempts reach max limit." $Font_Red
       ipchange_attempts=0
+      systemctl stop warp-go
       return 0
     fi
 
