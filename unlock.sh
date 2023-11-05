@@ -13,7 +13,8 @@ Font_Suffix="\033[0m"
 UA_Browser="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36"
 Media_Cookie=$(curl -s --retry 3 --max-time 10 "https://raw.githubusercontent.com/lmc999/RegionRestrictionCheck/main/cookies")
 
-MAX_ATTEMPTS=50
+MAX_ATTEMPTS=5
+MAX_IP_CHANGE_ATTEMPTS=20
 NF_REGION="US"
 LOG_FILE="$LOG_FILE"
 TG_TOKEN="$TG_TOKEN"
@@ -90,17 +91,30 @@ function Notify() {
 
 # Refresh Warp IP
 ip_address=$(timeout 5s curl -fs "ip.p3terx.com" | head -n 1)
+ipchange_attempts=0
 function Change_IP() {
   Log "Changing IP..." $Font_SkyBlue
-  systemctl restart wg-quick@wgcf
+  ipchange_attempts=$((ipchange_attempts + 1))
+
+  #systemctl restart wg-quick@wgcf
+  systemctl restart warp-go
 
   local result=$(timeout 5s curl -fs "ip.p3terx.com")
   ip_address=$(echo "$result" | head -n 1)
 
   if [[ -n $ip_address ]]; then
     Log "Get new ip address: $ip_address" $Font_Green
+    ipchange_attempts=0
   else
-    Log "Failed to get new IP address, sleep 3 seconds then retry." $Font_Red
+    Log "Failed to get new IP address. (retry count: $ipchange_attempts)" $Font_Red
+
+    if [[ $ipchange_attempts -ge $MAX_IP_CHANGE_ATTEMPTS ]]; then
+      Log "Chaning IP attempts reach max limit." $Font_Red
+      ipchange_attempts=0
+      return 0
+    fi
+
+    Log "Sleep 3 seconds then retry changing IP." $Font_Yellow
     sleep 3
     Change_IP
   fi
