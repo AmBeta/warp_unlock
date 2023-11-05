@@ -1,0 +1,12 @@
+[Unit]
+Description=warp-go service
+After=network.target
+Documentation=https://gitlab.com/ProjectWARP/warp-go
+[Service]
+WorkingDirectory=/root/
+ExecStart=/usr/local/bin/warp-go --config=/usr/local/bin/warp.conf
+Environment="LOG_LEVEL=verbose"
+RemainAfterExit=yes
+Restart=always
+[Install]
+WantedBy=multi-user.target
