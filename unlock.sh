@@ -98,6 +98,8 @@ function Change_IP() {
 
   #systemctl restart wg-quick@wgcf
   systemctl restart warp-go
+  # sleep for getting new ip
+  sleep 5s
 
   local result=$(timeout 5s curl -fs "ip.p3terx.com")
   ip_address=$(echo "$result" | head -n 1)
