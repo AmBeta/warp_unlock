@@ -317,7 +317,20 @@ ABC
         fi
         log_message
         [[ -n "$CUSTOM" ]] && [[ "${R[$service]}" != $(sed -n "${service}_line"p /usr/bin/status.log) ]] && tg_message
-        sed -i "${service}_line s/.*/${R[$service]}/" /usr/bin/status.log
+        case $service in
+          "Netflix")
+            sed -i "1s/.*/${R[$service]}/" /usr/bin/status.log
+            ;;
+          "Disney+")
+            sed -i "2s/.*/${R[$service]}/" /usr/bin/status.log
+            ;;
+          "AmazonPrimeVideo")
+            sed -i "3s/.*/${R[$service]}/" /usr/bin/status.log
+            ;;
+          "YouTubePremium")
+            sed -i "4s/.*/${R[$service]}/" /usr/bin/status.log
+            ;;
+        esac
       fi
     done
   }
