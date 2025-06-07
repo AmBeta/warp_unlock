@@ -264,9 +264,8 @@ ABC
     local CHECK_RESULT=$(./check.sh -R 0 | grep -v "Not Currently Supported")
     
     # 初始化结果数组
-    declare -A R
     declare -A REGION
-    
+
     # 检查每个配置的流媒体服务
     for service in $STREAMING_SERVICES; do
       case $service in
@@ -316,18 +315,21 @@ ABC
           CONTENT="$service: ${R[$service]}."
         fi
         log_message
-        [[ -n "$CUSTOM" ]] && [[ "${R[$service]}" != $(sed -n "${service}_line"p /usr/bin/status.log) ]] && tg_message
         case $service in
           "Netflix")
+            [[ -n "$CUSTOM" ]] && [[ "${R[$service]}" != $(sed -n 1p /usr/bin/status.log) ]] && tg_message
             sed -i "1s/.*/${R[$service]}/" /usr/bin/status.log
             ;;
           "Disney+")
+            [[ -n "$CUSTOM" ]] && [[ "${R[$service]}" != $(sed -n 2p /usr/bin/status.log) ]] && tg_message
             sed -i "2s/.*/${R[$service]}/" /usr/bin/status.log
             ;;
           "AmazonPrimeVideo")
+            [[ -n "$CUSTOM" ]] && [[ "${R[$service]}" != $(sed -n 3p /usr/bin/status.log) ]] && tg_message
             sed -i "3s/.*/${R[$service]}/" /usr/bin/status.log
             ;;
           "YouTubePremium")
+            [[ -n "$CUSTOM" ]] && [[ "${R[$service]}" != $(sed -n 4p /usr/bin/status.log) ]] && tg_message
             sed -i "4s/.*/${R[$service]}/" /usr/bin/status.log
             ;;
         esac
@@ -340,10 +342,12 @@ ABC
     CONTENT='Script runs.'
     log_message
     UA_Browser="Mozilla/5.0 (Windows NT 10.0; Win64; x6*4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36"
+    # 初始化结果数组
+    declare -A R
     check_streaming
     until [[ ! ${R[*]} =~ "$NOT_UNLOCK_STATUS" ]]; do
-      unset R
       $RESTART
+      declare -A R
       check_streaming
     done
     sleep 30m
